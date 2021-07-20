@@ -60,7 +60,7 @@ if __name__ == "__main__":
         aper_sum_bkgsub = phot['aperture_sum'] - aper_bkg
         aper_sum_bkgsubs.append(aper_sum_bkgsub)
 
-    #print(aper_sum_bkgsubs)
+    print(aper_sum_bkgsubs)
     # There are some NaN values for those on the edge
     plt.xlabel('X pixel')
     plt.ylabel('Y pixel')
