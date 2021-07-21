@@ -87,58 +87,48 @@ def calc_best_aper(flux, fluxerr, table, n_in=2, n_out=2.5, nkr=None,
         plt.close()
     t = Table([r_extract], names=["r_extract"])
     new_table = hstack([table, t])
+    new_table.write(outtable, overwrite=True)
     return new_table
 
+def plot_apertures(data, table, n_in=2, n_out=2.5):
+    vmin = np.nanpercentile(data, 10)
+    vmax = np.nanpercentile(data, 98)
+    fig = plt.figure(figsize=(8, 7.8))
+    ax = plt.subplot(111)
+    ax.grid(False)
+    ax.imshow(data, vmin=vmin, vmax=vmax, origin="lower")
+    # plt.colorbar(im)
+    for t in table:
+        # Setting the geometry of ellipses
+        x0 = t["X_IMAGE"] -1
+        y0 = t["Y_IMAGE"] - 1
+        ar = t["B_IMAGE"] / t["A_IMAGE"]
+        rkron = t["KRON_RADIUS"]
+        theta = np.deg2rad(t["THETA_IMAGE"])
+        r_sn_max = t["r_extract"]
+        aper = EllipticalAperture((x0, y0), r_sn_max, r_sn_max * ar,
+                                  theta=theta)
+        aper_n_in = EllipticalAperture((x0, y0), n_in * rkron,
+                                       n_in * rkron * ar, theta=theta)
+        aper_n_out = EllipticalAperture((x0, y0), n_out * rkron,
+                                       n_out * rkron * ar, theta=theta)
+        aper.plot(lw=0.5)
+        aper_n_in.plot(ls="--", lw=0.5)
+        aper_n_out.plot(ls="--", lw=0.5)
+    plt.subplots_adjust(left=0.05, bottom=0.05, right=0.99, top=0.99)
+    plt.savefig(f"apertures_nin{n_in}_nout{n_out}.png", dpi=300)
+    plt.close()
 
 if __name__ == "__main__":
     wdir = os.path.join(context.home_dir, "data/fieldA")
+    os.chdir(wdir) # Changing to working directory
     table_name = os.path.join(wdir, "source_cat.fits")
     table = Table.read(table_name)
-
     img_name = os.path.join(context.home_dir,
                             "data/fieldA/sn_fieldA.fits")
     flux = fits.getdata(img_name)
     fluxerr = fits.getdata(img_name, ext=2)
-    table = calc_best_aper(flux, fluxerr, table, wdir=wdir)
-    # fluxvar = fluxerr ** 2
-    #
-    # sn = flux / fluxerr
-    # vmin = np.nanpercentile(sn, 2)
-    # vmax = np.nanpercentile(sn, 99)
-    # plt.imshow(sn, vmin=vmin, vmax=vmax, origin="lower")
-    # plt.colorbar()
-    # plt.show()
-    # # Plot image of unsharp maks to visualize apertures
-    # unsharp_mask = fits.getdata(os.path.join(wdir, "unsharp_mask.fits"))
-    # vmin = np.nanpercentile(unsharp_mask, 50)
-    # vmax = np.nanpercentile(unsharp_mask, 98)
-    # fig = plt.figure()
-    # # ax = plt.subplot(111)
-    # # ax.grid(False)
-    # # plt.imshow(unsharp_mask, vmin=vmin, vmax=vmax, origin="lower",
-    # #            cmap="viridis")
-    # # plt.show()
-    # # Sky noise estimation
-    #
-    #     continue
-    #     # err = np.sqrt(photerr**2 + (skynoise * areas)**2)
-    #     # aper_sn = phot / err
-    #     # Finding approximate location of max S/N
-    #     idx_max = argrelextrema(aper_sn, np.greater)[0]
-    #     if len(idx_max):
-    #         r_sn_max = aper_a[idx_max][0]
-    #         aper = EllipticalAperture((x0, y0), r_sn_max, r_sn_max * ar,
-    #                                   theta=theta)
-    #         # aper.plot(color="w", ls="-")
-    #     else:
-    #         r_sn_max = rkron
-    #         aper = EllipticalAperture((x0, y0), r_sn_max, r_sn_max * ar,
-    #                                   theta=theta)
-    #         # aper.plot(color="r", ls="-")
-    #     # annulus_aperture.plot(ls="--")
-    #
-    #     plt.plot(aper_a, phot / err, "o-")
-    #     plt.plot(aper_a[idx_max], aper_sn[idx_max], "xr", ms=10)
-    #     plt.show()
-    # plt.colorbar()
-    # plt.show()
+    table = calc_best_aper(flux, fluxerr, table) # updated table
+    # Producing a finding chart for the sources
+    unsharp_mask = fits.getdata("unsharp_mask.fits")
+    plot_apertures(unsharp_mask, table)
