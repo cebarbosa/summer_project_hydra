@@ -13,14 +13,30 @@ elif getpass.getuser() == "natalie":
 else:
     raise ValueError("Computer not set up!")
 
+fields = ["fieldA", "fieldB", "fieldC", "fieldD"]
+PS = 0.262 # arcsec / pixel for MUSE
+fig_width = 3.54 # inches - A&A template
+
 # Matplotlib settings
-plt.style.context("seaborn-paper")
-plt.rcParams["text.usetex"] = False
+sns.set_style("ticks")
+# plt.style.context("seaborn-paper")
+# plt.rcParams["text.usetex"] = False
 plt.rcParams["xtick.direction"] = "in"
 plt.rcParams["ytick.direction"] = "in"
 plt.rcParams["xtick.minor.visible"] = True
 plt.rcParams["ytick.minor.visible"] = True
 plt.rcParams["xtick.top"] = True
 plt.rcParams["ytick.right"] = True
-sns.set()
-sns.set_style(rc={"font.family": "serif"})
+
+SMALL_SIZE = 7
+MEDIUM_SIZE = 8
+BIGGER_SIZE = 10
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
