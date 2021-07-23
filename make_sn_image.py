@@ -49,7 +49,9 @@ def make_sn_images(cubename, outfile, redo=False, wmin=5590, wmax=5680):
     return
 
 if __name__ == "__main__":
-    wdir = os.path.join(context.home_dir, "data/fieldA")
-    cubename = os.path.join(wdir, "NGC3311_FieldA_DATACUBE_COMBINED.fits")
-    outfile = os.path.join(wdir, "sn_fieldA.fits")
-    make_sn_images(cubename, outfile, redo=True)
+    for field in context.fields:
+        wdir = os.path.join(context.home_dir, f"data/{field}")
+        cubename = os.path.join(wdir, f"NGC3311_F"
+                                      f"{field[1:]}_DATACUBE_COMBINED.fits")
+        outfile = os.path.join(wdir, f"sn_{field}.fits")
+        make_sn_images(cubename, outfile, redo=True, wmin=4800, wmax=7000)
