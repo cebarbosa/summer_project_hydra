@@ -56,13 +56,10 @@ def mask_from_regions(imgname, redo=False):
     hdu.writeto(outfile, overwrite=True)
     return outfile
 
-def run_sextractor(img, redo=False, outfile=None, segmentation_file=None,
-                   save=False):
+def run_sextractor(img, redo=False, outfile=None):
     """ Produces a catalogue of sources in a given field. """
     if outfile is None:
-        outfile = "sexcat.fits"
-    if segmentation_file is None:
-        segmentation_file = "check.fits"
+        outfile = "source-catalog.fits"
     if os.path.exists(outfile) and not redo:
         return outfile
     params = ["NUMBER", "X_IMAGE", "Y_IMAGE", "KRON_RADIUS", "ELLIPTICITY",
@@ -97,7 +94,7 @@ def mask_sources(img, cat, ignore=None, redo=False, output=None):
         R = calc_isophotes(xx, yy, source["X_IMAGE"], source["Y_IMAGE"], \
                            source["THETA_IMAGE"] - 90, source["B_IMAGE"] /
                            source["A_IMAGE"])
-        Rmax = source["A_IMAGE"] * source["KRON_RADIUS"]
+        Rmax = 1.5 * source["KRON_RADIUS"]
         mask += np.where(R <= Rmax, 1, 0)
     hdu = fits.PrimaryHDU(mask)
     hdu.writeto(output, overwrite=True)
