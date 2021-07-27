@@ -14,6 +14,7 @@ else:
     raise ValueError("Computer not set up!")
 
 fields = ["fieldA", "fieldB", "fieldC", "fieldD"]
+seeing = [0.92, 1.4, 1.3, 1.8]
 PS = 0.262 # arcsec / pixel for MUSE
 fig_width = 3.54 # inches - A&A template
 
