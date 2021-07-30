@@ -15,7 +15,7 @@ warnings.simplefilter('ignore', category=AstropyWarning)
 def select_candidates(table, seeing, dflux_radius=0.5, field=None, redo=False,
                       ellip_max=0.3):
     """ Narrow the number of GC candidates according to their morphology. """
-    outtable = os.path.join(os.getcwd(), "gc_candidates.fits")
+    outtable = os.path.join(os.getcwd(), "gc-candidates-catalog.fits")
     if os.path.exists(outtable) and not redo:
         table = Table.read(outtable)
         return table
@@ -77,4 +77,3 @@ if __name__ == "__main__":
         # Select systems that are more likely GC candidates
         candidates = select_candidates(table, context.seeing[i] / 2,
                                        field=field, redo=redo)
-        candidates.write("gc-candidates-catalog.fits", overwrite=True)
