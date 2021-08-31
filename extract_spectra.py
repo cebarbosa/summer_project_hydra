@@ -159,7 +159,7 @@ def plot_apertures(bkgimg, table, redo=False, n_in=3, n_out=6):
     plt.close()
 
 def extract_spectra_from_cube(cubename, flux, table, mask, n_in=2.5,
-                              n_out=4, field=None, extname=None):
+                              n_out=4, field=None):
     """ Extract the spectra from the datacubes. """
     specs_dir = os.path.join(os.getcwd(),
                       f"spec1D_n{n_in}_{n_out}_rkron")
@@ -199,17 +199,21 @@ def extract_spectra_from_cube(cubename, flux, table, mask, n_in=2.5,
             objmask = aper.to_mask(method="center").to_image(
                                               flux.shape).astype(np.float)
             source_mask = (mask - objmask == 0).astype(np.int)
+            areas = []
             for k, region in enumerate([aper, annulus_aperture]):
                 region_mask = region.to_mask(method='center').to_image(
                                               flux.shape).astype(np.float)
                 # get x and y indices where the source is located
                 idy, idx = np.where(region_mask == 1)
+                areas.append(len(idx))
                 # Extracting spectra from cube
                 specs = cube[:, idy, idx]
                 # Removing masked regions
                 specmask = source_mask[idy, idx]
                 specs = specs[:, specmask==1]
-                spec1D = np.nanmean(specs, axis=1)
+                spec1D = np.nansum(specs, axis=1)
+                if k==1:
+                    spec1D *= areas[0] / areas[1]
                 outdata[i, j, k, :] = spec1D
     # Producing output tables
     print("Saving output tables")
