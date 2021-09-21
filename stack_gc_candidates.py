@@ -8,7 +8,6 @@ from astropy.table import Table, vstack
 import matplotlib.pyplot as plt
 from spectres import spectres
 from tqdm import tqdm
-import paintbox as pb
 
 import context
 
@@ -37,19 +36,20 @@ def load_field_data(cat, r_inn=2.5, r_out=4):
                    f"{obj['NUMBER']:03d}.fits"
         t = Table.read(specfile)
         v = obj["velocity"] * u.km / u.s
-        beta = np.sqrt((1 + v / const.c) / (1 - v / const.c))
+        c = const.c.to(u.km / u.s)
+        gamma = np.sqrt((1 + v / c) / (1 - v / c))
         wave = t["wave"].data
-        wrest = wave / beta
+        wrest = wave / gamma
         spec = (t["flux_source"] - t["flux_annulus"]).data
         specerr = np.sqrt(t["fluxerr_source"]**2 + t["fluxerr_annulus"]**2).data
-        # Put spectrum to rest-frame
+        # # Put spectrum to rest-frame
         spec, specerr = spectres(wave, wrest, spec, spec_errs=specerr, fill=0,
                                  verbose=False)
         specs.append(spec)
         specerrs.append(specerr)
     specs = np.array(specs) # 2D array
     specerrs = np.array(specerrs)
-    return wrest, specs, specerrs
+    return wave, specs, specerrs
 
 def systems_with_emission_lines(field):
     """ List of spectra with emission lines.
@@ -75,8 +75,10 @@ def sn_stack(sn_wmin=5000, sn_wmax=9000, vmin=2292, vmax=5723):
     """ Pipeline for processing the data. """
     fields = context.fields[:-1]
     flux, fluxerr, catalog = [], [], []
+    print("=" * 80)
+    print("Preparing spectra for stacking.")
+    print("=" * 80)
     for i, field in enumerate(fields):
-        print(f"Loading data for {field}")
         wdir = os.path.join(context.home_dir, "data", field)
         os.chdir(wdir)
         cat = Table.read("gc-candidates-rvs.fits")
@@ -112,6 +114,10 @@ def sn_stack(sn_wmin=5000, sn_wmax=9000, vmin=2292, vmax=5723):
     snr1 = der_snr(flux_sn, axis=1)
     snr2 = snr_err_propagation(flux_sn, fluxerr_sn)
     labels = ["DER_SNR", "Error propagation"]
+    names = ["der_snr", "err_prop"]
+    print("=" * 80)
+    print("Stacking spectra")
+    print("=" * 80)
     for i, snr in enumerate([snr1, snr2]):
         idx = np.argsort(snr)[::-1]
         sflux = flux[idx, :] # Sorted array
@@ -126,6 +132,10 @@ def sn_stack(sn_wmin=5000, sn_wmax=9000, vmin=2292, vmax=5723):
         else:
             snc = snr_err_propagation(cflux_sn, cfluxerr_sn)
         imax = np.argmax(snc)
+        print(f"Method: {labels[i]}")
+        print(f"Maximum S/N: {snc[imax]:.1f}")
+        print(f"Number of spectra stacked: {imax+1}")
+        print("-" * 80)
         plt.subplot(2, 1, 1)
         plt.plot(np.arange(len(snc))+1, snc, label=labels[i])
         plt.xlabel("Number of spectra")
@@ -133,7 +143,6 @@ def sn_stack(sn_wmin=5000, sn_wmax=9000, vmin=2292, vmax=5723):
         plt.axvline(x=imax+1, c=f"C{i}", ls="--")
         plt.subplot(2, 1, 2)
         plt.plot(wave, cflux[imax], label=labels[i])
-        plt.ylim(10000, 17000)
         plt.xlabel("Wavelength (Angstrom)")
         plt.ylabel("Flux")
     plt.legend()
