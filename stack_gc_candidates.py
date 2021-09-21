@@ -12,7 +12,7 @@ import paintbox as pb
 
 import context
 
-def der_snr(flux, axis=0, full_output=False):
+def der_snr(flux, axis=1, full_output=False):
     """ Calculates the S/N ratio of a spectra.
 
     Translated from the IDL routine der_snr.pro """
@@ -24,9 +24,9 @@ def der_snr(flux, axis=0, full_output=False):
         return signal, noise, signal / noise
     return signal / noise
 
-def snr_err_propagation(flux, fluxerr):
-    signal = np.nanmean(flux, axis=1)
-    noise = np.sqrt(np.nanmean(fluxerr**2, axis=1))
+def snr_err_propagation(flux, fluxerr, axis=1):
+    signal = np.nanmean(flux, axis=axis)
+    noise = np.sqrt(np.nanmean(fluxerr**2, axis=axis))
     return signal / noise
 
 def load_field_data(cat, r_inn=2.5, r_out=4):
@@ -43,25 +43,53 @@ def load_field_data(cat, r_inn=2.5, r_out=4):
         spec = (t["flux_source"] - t["flux_annulus"]).data
         specerr = np.sqrt(t["fluxerr_source"]**2 + t["fluxerr_annulus"]**2).data
         # Put spectrum to rest-frame
-        spec, specerr = spectres(wrest, wave, spec, spec_errs=specerr, fill=0,
+        spec, specerr = spectres(wave, wrest, spec, spec_errs=specerr, fill=0,
                                  verbose=False)
         specs.append(spec)
         specerrs.append(specerr)
-    specs = np.array(specs)
+    specs = np.array(specs) # 2D array
     specerrs = np.array(specerrs)
-    return wave, specs, specerrs
+    return wrest, specs, specerrs
 
-def sn_stack(sn_wmin=5000, sn_wmax=6000, vmin=2292, vmax=5723):
+def systems_with_emission_lines(field):
+    """ List of spectra with emission lines.
+
+    List is produced from visual classification. """
+    if field == "fieldA":
+        sources = ["002", "012", "016", "019", "033", "039", "041", "063",
+                   "079", "113", "115", "161", "177", "181", "194", "215",
+                   "225", "249", "250", "254", "263"]
+    elif field == "fieldB":
+        sources =  ["015","018","021","025","035","041","049","058","059","063",
+               "064","073","077",
+            "085","086","088","096","098","107","114","119","123","124",
+                 "128", "131","140"]
+    elif field == "fieldC":
+        sources = ["020","022","049","063","091","095","100","109","114","116",
+               "126","127"]
+    else:
+        return []
+    return [int(_) for _ in sources]
+
+def sn_stack(sn_wmin=5000, sn_wmax=9000, vmin=2292, vmax=5723):
     """ Pipeline for processing the data. """
+    fields = context.fields[:-1]
     flux, fluxerr, catalog = [], [], []
-    for i, field in enumerate(context.fields):
+    for i, field in enumerate(fields):
         print(f"Loading data for {field}")
         wdir = os.path.join(context.home_dir, "data", field)
         os.chdir(wdir)
         cat = Table.read("gc-candidates-rvs.fits")
-        # Use only GC candidates withing cluster
+        ########################################################################
+        # Use only GC candidates within cluster
         idx = np.where((cat["velocity"] >= vmin) & (cat["velocity"] <= vmax))[0]
         cat = cat[idx]
+        ########################################################################
+        # Remove systems with emission lines
+        em_systems = systems_with_emission_lines(field)
+        idx = np.in1d(cat["NUMBER"], em_systems)
+        cat = cat[~idx]
+        ########################################################################
         w, f, ferr = load_field_data(cat)
         if i == 0:
             wave = w
@@ -105,7 +133,7 @@ def sn_stack(sn_wmin=5000, sn_wmax=6000, vmin=2292, vmax=5723):
         plt.axvline(x=imax+1, c=f"C{i}", ls="--")
         plt.subplot(2, 1, 2)
         plt.plot(wave, cflux[imax], label=labels[i])
-        plt.ylim(20000, 40000)
+        plt.ylim(10000, 17000)
         plt.xlabel("Wavelength (Angstrom)")
         plt.ylabel("Flux")
     plt.legend()
