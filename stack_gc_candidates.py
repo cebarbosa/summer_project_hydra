@@ -99,6 +99,7 @@ def sn_stack(sn_wmin=5500, sn_wmax=7000, vmin=2292, vmax=5723):
     # Reads field A cube to set output wavelength array
     cubename = os.path.join(context.home_dir, "data", "fieldA",
                             f"NGC3311_FieldA_DATACUBE_COMBINED.fits")
+    bunit = np.power(10., -20) * u.erg / u.s / u.cm**2 / u.Angstrom
     wave = misc.array_from_header(cubename)
     print("=" * 80)
     print("Preparing spectra for stacking.")
@@ -155,7 +156,12 @@ def sn_stack(sn_wmin=5500, sn_wmax=7000, vmin=2292, vmax=5723):
     stack = flux_cum[imax]
     stackerr = fluxerr_cum[imax]
     # Preparing mask
-    stack_mask = np.where(mask.mean(axis=0) > 0.2, 1, 0)
+    stack_mask = np.where(mask.mean(axis=0) > 0.25, 1, 0)
+    # Saving the results
+    t = Table([wave, stack * bunit, stackerr * bunit, stack_mask],
+              names=["wave", "flux", "fluxerr", "mask"])
+    t.write(os.path.join(context.home_dir, "data",
+                         "stacked_spectrum_gcs.fits"), overwrite=True)
     pmask = np.where(stack_mask == 1, np.nan, 1)
     # Make plot
     plt.plot(np.arange(len(snc))+1, snc, label="Error propagation")

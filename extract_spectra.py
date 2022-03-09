@@ -12,7 +12,6 @@ from scipy.signal import argrelextrema
 from astropy.io import fits
 from astropy.table import Table, hstack
 from astropy.stats import sigma_clipped_stats
-from astropy.visualization import hist
 from photutils.aperture import aperture_photometry
 from photutils.aperture import EllipticalAperture, EllipticalAnnulus
 import matplotlib.pyplot as plt
@@ -229,7 +228,7 @@ def extract_spectra_from_cube(cubename, flux, table, mask, n_in=2.5,
 
 
 def run(n_in=2.5, n_out=4, redo=False):
-    """ Pipeline to run all routines of extranction from data of NGC 3311. """
+    """ Pipeline to run all routines of extraction from data of NGC 3311. """
     for i, field in enumerate(context.fields):
         wdir = os.path.join(context.home_dir, f"data/{field}")
         os.chdir(wdir) # Changing to working directory

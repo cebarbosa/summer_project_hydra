@@ -1,3 +1,5 @@
+import numpy as np
+
 # =====================================================================================
 
 def DER_SNR(flux):
@@ -36,19 +38,18 @@ def DER_SNR(flux):
                01.01.2007, fst, added more help text
                28.04.2010, fst, return value is a float now instead of a numpy.float64
    """
-   from numpy import array, where, median, abs 
-
-   flux = array(flux)
+   flux = np.array(flux)
 
    # Values that are exactly zero (padded) are skipped
-   flux = array(flux[where(flux != 0.0)])
+   flux = np.array(flux[np.where(flux != 0.0)])
    n    = len(flux)      
 
    # For spectra shorter than this, no value can be returned
    if (n>4):
-      signal = median(flux)
+      signal = np.nanmedian(flux)
 
-      noise  = 0.6052697 * median(abs(2.0 * flux[2:n-2] - flux[0:n-4] - flux[4:n]))
+      noise  = 0.6052697 * np.nanmedian(abs(2.0 * flux[2:n-2] - flux[0:n-4] -
+                                       flux[4:n]))
 
       return float(signal / noise)  
 

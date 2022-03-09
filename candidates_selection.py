@@ -64,16 +64,20 @@ def select_candidates(table, seeing, dflux_radius=0.5, field=None, redo=False,
     plt.close()
     return candidates
 
-if __name__ == "__main__":
-    redo=True
+def pipeline(r_inn=2.5, r_out=4, redo=True):
+    """ Select candidates in all fields."""
     for i, field in enumerate(context.fields):
         wdir = os.path.join(context.home_dir, f"data/{field}")
         os.chdir(wdir) # Changing to working directory
-        table = Table.read("source-catalog.fits")
+        table = Table.read(f"radius_extract_n{r_inn}_{r_out}_rkron.fits")
         # Converting table to arcsec
         table["FLUX_RADIUS"] *= context.PS
         # Offset for magnitude
         table["MAG_AUTO"] += 25
+        table["FIELD"] = [field] * len(table)
         # Select systems that are more likely GC candidates
         candidates = select_candidates(table, context.seeing[i] / 2,
                                        field=field, redo=redo)
+
+if __name__ == "__main__":
+    pipeline()
